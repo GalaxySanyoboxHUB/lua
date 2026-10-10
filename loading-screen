@@ -28,22 +28,12 @@ screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(1, 0, 1, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+mainFrame.BackgroundTransparency = 1 -- Transparent full-screen background; keep only the loading panel visible
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
-local bgGradient = Instance.new("UIGradient")
-bgGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(4, 4, 8)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 18, 30)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(4, 4, 8))
-})
-bgGradient.Rotation = 45
-bgGradient.Parent = mainFrame
-
-local blur = Instance.new("BlurEffect")
-blur.Size = 16
-blur.Parent = game.Workspace.CurrentCamera
+-- No full-screen gradient or camera blur, so the game world stays visible.
+local blur = nil
 
 local particleContainer = Instance.new("Frame")
 particleContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -242,7 +232,7 @@ discordLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
 discordLabel.Parent = centerPanel
 
 -- ==========================================
--- 6. TIMING & 98% STUCK LOGIC (3 MINS TOTAL)
+-- 6. LOADING PROGRESS (NO PERMANENT 98% FREEZE)
 -- ==========================================
 local loopConnection = RunService.Heartbeat:Connect(function()
 	if math.random() < 0.04 then spawnParticle() end
@@ -258,48 +248,56 @@ TweenService:Create(centerPanel, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum
 }):Play()
 
 local customPhrases = {
-	"Securing environmental pipeline...",
-	"Decrypting core structural assets...",
-	"Bypassing security network checks...",
-	"Injecting operational system logic...",
-	"Finalizing execution environment..."
+	"Preparing game assets...",
+	"Loading environment...",
+	"Setting up player profile...",
+	"Finishing interface...",
+	"Almost ready..."
 }
 
-local TARGET_TIME = 180 
-local startTime = os.time()
+local TARGET_TIME = 6
+local startTime = os.clock()
 
+-- Animate progress while the game finishes loading. Never freeze at 98%.
 while true do
-	local elapsed = os.time() - startTime
+	local elapsed = os.clock() - startTime
 	local progress = math.clamp(elapsed / TARGET_TIME, 0, 1)
 	local percent = math.floor(progress * 100)
-	
-	-- Hihinto at mag-i-stuck ang buong loading loop sa 98%
-	if percent >= 98 then
-		TweenService:Create(barFill, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Size = UDim2.new(0.98, 0, 1, 0)}):Play()
-		percentLabel.Text = "98%"
+
+	TweenService:Create(barFill, TweenInfo.new(0.25, Enum.EasingStyle.Linear), {
+		Size = UDim2.new(progress, 0, 1, 0)
+	}):Play()
+	percentLabel.Text = percent .. "%"
+
+	if percent < 20 then
+		statusLabel.Text = customPhrases[1]
+	elseif percent < 45 then
+		statusLabel.Text = customPhrases[2]
+	elseif percent < 65 then
+		statusLabel.Text = customPhrases[3]
+	elseif percent < 85 then
+		statusLabel.Text = customPhrases[4]
+	else
+		statusLabel.Text = customPhrases[5]
+	end
+
+	if progress >= 1 and game:IsLoaded() then
 		break
 	end
-	
-	TweenService:Create(barFill, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
-	percentLabel.Text = percent .. "%"
-	
-	if percent < 20 then statusLabel.Text = customPhrases[1]
-	elseif percent >= 20 and percent < 45 then statusLabel.Text = customPhrases[2]
-	elseif percent >= 45 and percent < 65 then statusLabel.Text = customPhrases[3]
-	elseif percent >= 65 and percent < 85 then statusLabel.Text = customPhrases[4]
-	elseif percent >= 85 then statusLabel.Text = customPhrases[5]
-	end
-	
-	task.wait(0.5)
+	task.wait(0.1)
 end
 
--- ==========================================
--- 7. THE LOCKED PERMANENT 98% FREEZE STATE
--- ==========================================
-statusLabel.Text = "CRITICAL: DECRYPTION STALLED. VERIFYING FRAMEWORK KEYS..."
-statusLabel.TextColor3 = Color3.fromRGB(255, 75, 75) -- Alert red status logs
-percentLabel.Text = "98%"
-percentLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Gold text highlights
-miniLoadingLabel.Text = "STALLED" -- Binago ang Loading... text para saktong frozen look sa 98%
-miniLoadingLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
--- Naka-stuck na ito nang permanente sa screen!
+-- Complete and remove the loading screen so it cannot leave the player stuck.
+percentLabel.Text = "100%"
+barFill.Size = UDim2.new(1, 0, 1, 0)
+statusLabel.Text = "Ready!"
+miniLoadingLabel.Text = "COMPLETE"
+task.wait(0.4)
+
+if loopConnection then
+	loopConnection:Disconnect()
+end
+if blur then
+	blur:Destroy()
+end
+screenGui:Destroy()
