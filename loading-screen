@@ -70,7 +70,7 @@ centerPanel.Size = UDim2.new(0, 360, 0, 250)
 centerPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
 centerPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 centerPanel.BackgroundColor3 = Color3.fromRGB(16, 18, 26)
-centerPanel.BackgroundTransparency = 0.2
+centerPanel.BackgroundTransparency = 1
 centerPanel.BorderSizePixel = 0
 centerPanel.Parent = mainFrame
 
