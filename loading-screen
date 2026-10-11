@@ -255,10 +255,10 @@ local customPhrases = {
 	"Almost ready..."
 }
 
-local TARGET_TIME = 6
+local TARGET_TIME = 180 -- 3 minutes, like your original script
 local startTime = os.clock()
 
--- Animate progress while the game finishes loading. Never freeze at 98%.
+-- Animate progress for 3 minutes, like your original script, then complete at 100%.
 while true do
 	local elapsed = os.clock() - startTime
 	local progress = math.clamp(elapsed / TARGET_TIME, 0, 1)
